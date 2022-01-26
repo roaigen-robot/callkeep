@@ -410,9 +410,11 @@ class FlutterCallkeep extends EventManager {
       case 'CallKeepDidActivateAudioSession':
         emit(CallKeepDidActivateAudioSession());
         break;
+      // ANDROID(X)
       case 'CallKeepDidDeactivateAudioSession':
         emit(CallKeepDidDeactivateAudioSession());
         break;
+      // ANDROID(X)
       case 'CallKeepDidDisplayIncomingCall':
         emit(CallKeepDidDisplayIncomingCall.fromMap(data));
         break;
@@ -425,15 +427,19 @@ class FlutterCallkeep extends EventManager {
       case 'CallKeepDidPerformDTMFAction':
         emit(CallKeepDidPerformDTMFAction.fromMap(data));
         break;
+      // ANDROID(X)
       case 'CallKeepProviderReset':
         emit(CallKeepProviderReset());
         break;
+      // iOS(X)
       case 'CallKeepCheckReachability':
         emit(CallKeepCheckReachability());
         break;
+      // ANDROID(X)
       case 'CallKeepDidLoadWithEvents':
         emit(CallKeepDidLoadWithEvents());
         break;
+      // ANDROID(X)
       case 'CallKeepPushKitToken':
         emit(CallKeepPushKitToken.fromMap(data));
         break;
