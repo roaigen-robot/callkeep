@@ -287,10 +287,9 @@ public class CallKeepModule {
 
     
     public void startCall(String uuid, String number, String callerName) {
-        if (!isConnectionServiceAvailable() || !hasPhoneAccount() || !hasPermissions() || number == null) {
-            return;
-        }
-
+        // if (!isConnectionServiceAvailable() || !hasPhoneAccount() || !hasPermissions() || number == null) {
+        //     return;
+        // }
         Log.d(TAG, "startCall number: " + number + ", callerName: " + callerName);
 
         Bundle extras = new Bundle();
