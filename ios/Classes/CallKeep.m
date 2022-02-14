@@ -638,7 +638,7 @@ contactIdentifier:(NSString * _Nullable)contactIdentifier
 #ifdef DEBUG
     NSLog(@"[CallKeep][configureAudioSession] Activating audio session");
 #endif
-    
+    /*
     AVAudioSession* audioSession = [AVAudioSession sharedInstance];
     [audioSession setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:AVAudioSessionCategoryOptionAllowBluetooth error:nil];
     
@@ -650,6 +650,7 @@ contactIdentifier:(NSString * _Nullable)contactIdentifier
     NSTimeInterval bufferDuration = .005;
     [audioSession setPreferredIOBufferDuration:bufferDuration error:nil];
     [audioSession setActive:TRUE error:nil];
+    */
 }
 
 + (BOOL)application:(UIApplication *)application
