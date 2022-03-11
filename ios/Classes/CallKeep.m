@@ -223,19 +223,22 @@ static CXProvider* sharedProvider;
 
 - (void)pushRegistry:(PKPushRegistry *)registry didReceiveIncomingPushWithPayload:(PKPushPayload *)payload forType:(PKPushType)type withCompletionHandler:(nonnull void (^)(void))completion {
     // Process the received push
-    NSLog(@"didReceiveIncomingPushWithPayload payload = %@", payload.type);
+    NSLog(@"didReceiveIncomingPushWithPayload Type = %@", payload.type);
+    NSLog(@"didReceiveIncomingPushWithPayload Payload = %@", payload.dictionaryPayload);
     /* payload example.
-    {
-        "uuid": "xxxxx-xxxxx-xxxxx-xxxxx",
-        "caller_id": "+8618612345678",
-        "caller_name": "hello",
-        "caller_id_type": "number",
-        "has_video": false,
-    }
+        {
+            "function": "call_new",
+            "address": "https://dev.roaigen.com:7061/room/b5f2431f?contact=01012345678",
+            "caller": "9999999999",
+            "roomID": "b5f2431f",
+            "category": "video_call",
+            "callerName": "아저씨"
+        }
     */
 
     NSDictionary *dic = payload.dictionaryPayload;
 
+    /* Skip checking aps
     if (dic[@"aps"] != nil) {
         NSLog(@"Do not use the 'alert' format for push type %@.", payload.type);
         if(completion != nil) {
@@ -243,12 +246,13 @@ static CXProvider* sharedProvider;
         }
         return;
     }
+    */
 
     NSString *uuid = dic[@"uuid"];
-    NSString *callerId = dic[@"caller_id"];
-    NSString *callerName = dic[@"caller_name"];
-    BOOL hasVideo = [dic[@"has_video"] boolValue];
-    NSString *callerIdType = dic[@"caller_id_type"];
+    NSString *callerId = dic[@"caller"];
+    NSString *callerName = dic[@"callerName"];
+    BOOL hasVideo = true;
+    NSString *callerIdType = @"generic";
    
 
     if( uuid == nil) {
