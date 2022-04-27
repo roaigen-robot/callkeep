@@ -239,11 +239,9 @@ class _MyAppState extends State<HomePage> {
     final String number = calls[callUUID].number;
     // Workaround because Android doesn't display well displayName, se we have to switch ...
     if (isIOS) {
-      _callKeep.updateDisplay(callUUID,
-          displayName: 'New Name', handle: number);
+      _callKeep.updateDisplay(callUUID, displayName: 'Name', handle: number);
     } else {
-      _callKeep.updateDisplay(callUUID,
-          displayName: number, handle: 'New Name');
+      _callKeep.updateDisplay(callUUID, displayName: number, handle: 'Name');
     }
 
     print('[updateDisplay: $number] $callUUID');

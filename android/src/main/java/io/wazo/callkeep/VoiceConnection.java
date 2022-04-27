@@ -18,8 +18,16 @@
 package io.wazo.callkeep;
 
 import android.annotation.TargetApi;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
+import android.media.AudioAttributes;
+import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -29,16 +37,24 @@ import android.telecom.Connection;
 import android.telecom.DisconnectCause;
 import android.telecom.TelecomManager;
 import android.util.Log;
+import android.widget.RemoteViews;
+import android.widget.TextView;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import java.util.HashMap;
+import java.util.UUID;
 
 import static io.wazo.callkeep.Constants.*;
 
+import io.flutter.embedding.engine.plugins.broadcastreceiver.BroadcastReceiverControlSurface;
+import io.flutter.plugin.common.MethodChannel;
+
 @TargetApi(Build.VERSION_CODES.M)
-public class VoiceConnection extends Connection {
+public class VoiceConnection extends Connection  {
     private boolean isMuted = false;
     private HashMap<String, String> handle;
     private Context context;
@@ -58,6 +74,62 @@ public class VoiceConnection extends Connection {
         if (name != null && !name.equals("")) {
             setCallerDisplayName(name, TelecomManager.PRESENTATION_ALLOWED);
         }
+    }
+
+    @Override
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public void onShowIncomingCallUi() {
+        String uuid = handle.get(EXTRA_CALL_UUID);
+        String callerName = handle.get(EXTRA_CALLER_NAME);
+        int notificationId = uuid.hashCode();
+        Resources res = context.getResources();
+
+        // Setup Fullscreen Noti
+        Intent fullScreenIntent = new Intent(context, CallKeepIncomingFullNotiActivity.class);
+        fullScreenIntent.putExtra(EXTRA_CALLER_NAME, callerName);
+        fullScreenIntent.putExtra(EXTRA_CALL_UUID, uuid);
+        PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(context, notificationId, fullScreenIntent, PendingIntent.FLAG_IMMUTABLE);
+
+        // Setup RemoteView Noti
+        RemoteViews remoteView = new RemoteViews(context.getPackageName(), R.layout.callkeep_incoming_noti);
+        remoteView.setTextViewText(R.id.caller_text, callerName + "에게 전화가 왔어요");
+
+        Intent answerIntent = new Intent(context, VoiceConnection.NotiReceiver.class);
+        answerIntent.putExtra("CALL_ANSWER", true);
+        answerIntent.putExtra(EXTRA_CALL_UUID, uuid);
+        PendingIntent pendingAnswerIntent = PendingIntent.getBroadcast(context, UUID.randomUUID().hashCode(), answerIntent, PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
+        remoteView.setOnClickPendingIntent(R.id.answer_button, pendingAnswerIntent);
+
+        Intent rejectIntent = new Intent(context, VoiceConnection.NotiReceiver.class);
+        rejectIntent.putExtra("CALL_REJECT", true);
+        rejectIntent.putExtra(EXTRA_CALL_UUID, uuid);
+        PendingIntent pendingRejectIntent = PendingIntent.getBroadcast(context, UUID.randomUUID().hashCode(), rejectIntent, PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
+        remoteView.setOnClickPendingIntent(R.id.reject_button, pendingRejectIntent);
+
+        // Setup Notification channel
+        String channelId = context.getPackageName() + ".callkeep.callnew";
+        Log.d("onShowIncomingCallUi", "Set NotificationChannel : " + channelId);
+        NotificationChannel channel = new NotificationChannel(channelId, "전화 수신", NotificationManager.IMPORTANCE_HIGH);
+        Uri ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+        channel.setSound(ringtoneUri, new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build());
+        NotificationManager mgr = context.getSystemService(NotificationManager.class);
+        mgr.createNotificationChannel(channel);
+
+        // Setup Notification
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(context, channelId)
+                .setSmallIcon(res.getIdentifier("ic_launcher","drawable", context.getPackageName()))
+                .setFullScreenIntent(fullScreenPendingIntent, true)
+                .setCustomContentView(remoteView)
+                .setCustomBigContentView(remoteView)
+                .setCustomHeadsUpContentView(remoteView)
+                .setOngoing(true);
+        Notification notification = notificationBuilder.build();
+        notification.flags |= Notification.FLAG_INSISTENT;
+        mgr.notify(notificationId, notification);
+        Log.d("onShowIncomingCallUi", "Show Notification callUuid : " + uuid + " / id: " + notificationId);
     }
 
     @Override
@@ -210,5 +282,39 @@ public class VoiceConnection extends Connection {
                 LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
             }
         });
+    }
+
+    public static class NotiReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String uuid = intent.getStringExtra(EXTRA_CALL_UUID);
+            if(uuid == null || uuid.isEmpty()) {
+                Log.d("VoiceConnection$NotiReceiver", "Not noti..");
+                return;
+            }
+            if(intent.getBooleanExtra("CALL_ANSWER",false)) {
+                handleCall(context, uuid,true);
+            } else if (intent.getBooleanExtra("CALL_REJECT", false)) {
+                handleCall(context, uuid,false);
+            }
+        }
+
+        public static void handleCall(Context context, String uuid, boolean answer) {
+            int notificationId = uuid.hashCode();
+            Log.d("VoiceConnection$NotiReceiver", "Handle call : (" + answer + ") callUuid : " + uuid + " / id : " + notificationId);
+            CallKeepModule lastCallKeep = CallKeepModule.LastCallKeep();
+            NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.cancel(uuid.hashCode());
+            if (answer) {
+                Log.d("VoiceConnection$NotiReceiver", "CALL CALL_ANSWER : " + uuid);
+//                notificationManager.cancelAll();
+                lastCallKeep.answerIncomingCall(uuid);
+
+            } else {
+                Log.d("VoiceConnection$NotiReceiver", "CALL REJECT : " + uuid);
+                lastCallKeep.rejectCall(uuid);
+            }
+        }
     }
 }

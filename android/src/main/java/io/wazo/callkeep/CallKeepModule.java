@@ -87,9 +87,13 @@ public class CallKeepModule {
     Activity _currentActivity = null;
     MethodChannel _eventChannel;
 
+    private static CallKeepModule _lastCallKeep;
+    public static CallKeepModule LastCallKeep() { return _lastCallKeep; }
+
     public CallKeepModule(Context context, BinaryMessenger messenger) {
         this._context = context;
         this._eventChannel = new MethodChannel(messenger, "FlutterCallKeep.Event");
+        _lastCallKeep = this;
     }
 
     public void setActivity(Activity activity) {
@@ -219,7 +223,7 @@ public class CallKeepModule {
 
         return true;
     }
-    
+
     public void setup(ConstraintsMap options) {
         if (isReceiverRegistered) {
             return;
@@ -234,7 +238,7 @@ public class CallKeepModule {
 
         VoiceConnectionService.setSettings(options);
     }
-    
+
     public void registerPhoneAccount() {
         if (!isConnectionServiceAvailable()) {
             return;
@@ -243,7 +247,7 @@ public class CallKeepModule {
         this.registerPhoneAccount(this.getAppContext());
     }
 
-    
+
     public void registerEvents() {
         if (!isConnectionServiceAvailable()) {
             return;
@@ -253,7 +257,7 @@ public class CallKeepModule {
         VoiceConnectionService.setPhoneAccountHandle(handle);
     }
 
-    
+
     public void displayIncomingCall(String uuid, String number, String callerName) {
         if (!isConnectionServiceAvailable() || !hasPhoneAccount()) {
             return;
@@ -271,7 +275,7 @@ public class CallKeepModule {
         telecomManager.addNewIncomingCall(handle, extras);
     }
 
-    
+
     public void answerIncomingCall(String uuid) {
         if (!isConnectionServiceAvailable() || !hasPhoneAccount()) {
             return;
@@ -285,7 +289,7 @@ public class CallKeepModule {
         conn.onAnswer();
     }
 
-    
+    @SuppressLint("MissingPermission")
     public void startCall(String uuid, String number, String callerName) {
         // if (!isConnectionServiceAvailable() || !hasPhoneAccount() || !hasPermissions() || number == null) {
         //     return;
@@ -306,7 +310,7 @@ public class CallKeepModule {
         telecomManager.placeCall(uri, extras);
     }
 
-    
+
     public void endCall(String uuid) {
         Log.d(TAG, "endCall called");
         if (!isConnectionServiceAvailable() || !hasPhoneAccount()) {
@@ -322,7 +326,7 @@ public class CallKeepModule {
         Log.d(TAG, "endCall executed");
     }
 
-    
+
     public void endAllCalls() {
         Log.d(TAG, "endAllCalls called");
         if (!isConnectionServiceAvailable() || !hasPhoneAccount()) {
@@ -338,7 +342,7 @@ public class CallKeepModule {
         Log.d(TAG, "endAllCalls executed");
     }
 
-    
+
     public void checkPhoneAccountPermission(ConstraintsArray optionalPermissions, @NonNull MethodChannel.Result result) {
         if (!isConnectionServiceAvailable()) {
             result.error(E_ACTIVITY_DOES_NOT_EXIST, "ConnectionService not available for this version of Android.", null);
@@ -381,7 +385,7 @@ public class CallKeepModule {
         result.success(!hasPhoneAccount());
     }
 
-    
+    @SuppressLint("MissingPermission")
     public void checkDefaultPhoneAccount(@NonNull MethodChannel.Result result) {
         if (!isConnectionServiceAvailable() || !hasPhoneAccount()) {
             result.success(true);
