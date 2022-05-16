@@ -132,8 +132,6 @@ public class VoiceConnectionService extends ConnectionService {
         incomingCallConnection.setRinging();
         incomingCallConnection.setInitialized();
 
-        startForegroundService();
-
         return incomingCallConnection;
     }
 
@@ -198,6 +196,10 @@ public class VoiceConnectionService extends ConnectionService {
         Log.d(TAG, "onCreateOutgoingConnection: calling");
 
         return outgoingCallConnection;
+    }
+
+    public void prepareAnswerCall() {
+        startForegroundService();
     }
 
     private void startForegroundService() {

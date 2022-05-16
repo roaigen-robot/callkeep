@@ -285,7 +285,7 @@ public class CallKeepModule {
         if (conn == null) {
             return;
         }
-
+        VoiceConnectionService.currentConnectionService.prepareAnswerCall();
         conn.onAnswer();
     }
 

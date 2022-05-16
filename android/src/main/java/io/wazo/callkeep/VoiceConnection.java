@@ -308,9 +308,8 @@ public class VoiceConnection extends Connection  {
             notificationManager.cancel(uuid.hashCode());
             if (answer) {
                 Log.d("VoiceConnection$NotiReceiver", "CALL CALL_ANSWER : " + uuid);
-//                notificationManager.cancelAll();
+                notificationManager.cancelAll();
                 lastCallKeep.answerIncomingCall(uuid);
-
             } else {
                 Log.d("VoiceConnection$NotiReceiver", "CALL REJECT : " + uuid);
                 lastCallKeep.rejectCall(uuid);
